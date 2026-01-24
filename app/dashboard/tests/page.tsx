@@ -1,10 +1,43 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
+import toast from 'react-hot-toast'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { 
+  Plus, 
+  Search, 
+  Filter, 
+  FileText, 
+  Calendar, 
+  Users, 
+  Eye, 
+  Edit, 
+  Trash 
+} from 'lucide-react'
+import { formatDate } from '@/lib/utils'
+import { CreateTestDialog } from '@/components/tests/create-test-dialog'
+import { EditTestDialog } from '@/components/tests/edit-test-dialog'
 
-// ... existing code ...
+interface Test {
+  id: string
+  title: string
+  title_hi: string | null
+  description: string | null
+  test_type: string
+  duration_minutes: number
+  total_marks: number
+  passing_marks: number
+  difficulty: string
+  is_free: boolean
+  is_live?: boolean
+  total_attempts?: number
+  created_at: string
+}
 
 export default function TestsPage() {
   const router = useRouter()
@@ -17,11 +50,7 @@ export default function TestsPage() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [selectedTest, setSelectedTest] = useState<Test | null>(null)
 
-  useEffect(() => {
-    loadTests()
-  }, [filterType, searchQuery])
-
-  const loadTests = async () => {
+  const loadTests = useCallback(async () => {
     setLoading(true)
     try {
       let query = supabase
@@ -48,7 +77,11 @@ export default function TestsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filterType, searchQuery, supabase])
+
+  useEffect(() => {
+    loadTests()
+  }, [loadTests])
 
   const deleteTest = async (testId: string) => {
     if (!confirm('Are you sure you want to delete this test?')) return

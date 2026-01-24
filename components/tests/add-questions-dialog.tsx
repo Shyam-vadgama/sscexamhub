@@ -178,10 +178,10 @@ export function AddQuestionsDialog({ open, onOpenChange, onSuccess, testId, exis
                       </p>
                     )}
                     <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="info" className="text-xs">
                         {question.subject}
                       </Badge>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="warning" className="text-xs">
                         {question.difficulty}
                       </Badge>
                       {question.topic && (

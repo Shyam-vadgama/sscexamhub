@@ -44,26 +44,15 @@ import { AddQuestionsDialog } from '@/components/tests/add-questions-dialog'
 
 export default function TestDetailsPage() {
   const params = useParams()
-  // ... existing code ...
+  const router = useRouter()
+  const [test, setTest] = useState<Test | null>(null)
+  const [testQuestions, setTestQuestions] = useState<TestQuestion[]>([])
+  const [loading, setLoading] = useState(true)
   const [showAddQuestions, setShowAddQuestions] = useState(false)
-  // ... existing code ...
+  
+  const supabase = createClient()
 
-  return (
-    <div className="space-y-6">
-      {/* ... existing header and cards ... */}
-
-      {/* ... Questions List Card ... */}
-
-      <AddQuestionsDialog
-        open={showAddQuestions}
-        onOpenChange={setShowAddQuestions}
-        onSuccess={loadTestDetails}
-        testId={params.id as string}
-        existingQuestionIds={testQuestions.map(tq => tq.question_id)}
-      />
-    </div>
-  )
-}
+  useEffect(() => {
     if (params.id) {
       loadTestDetails()
     }
@@ -258,10 +247,10 @@ export default function TestDetailsPage() {
                       </p>
                     )}
                     <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="info" className="text-xs">
                         {tq.question.subject}
                       </Badge>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="warning" className="text-xs">
                         {tq.question.difficulty}
                       </Badge>
                     </div>
@@ -278,6 +267,9 @@ export default function TestDetailsPage() {
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+
       <AddQuestionsDialog
         open={showAddQuestions}
         onOpenChange={setShowAddQuestions}
