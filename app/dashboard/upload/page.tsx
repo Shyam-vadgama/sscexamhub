@@ -11,11 +11,12 @@ import { Upload, File, X, CheckCircle, AlertCircle, Loader2, FolderUp, Image as 
 import toast from 'react-hot-toast'
 import { useDropzone } from 'react-dropzone'
 import { formatFileSize } from '@/lib/utils'
+import { extractFileMetadata, sanitizeFilename, FileMetadata } from '@/lib/file-utils'
 
 interface UploadFile {
   id: string
   file: File
-  status: 'pending' | 'uploading' | 'success' | 'error'
+  status: 'pending' | 'uploading' | 'success' | 'error' | 'analyzing'
   progress: number
   url?: string
   error?: string
@@ -24,6 +25,7 @@ interface UploadFile {
     category: string
     isFree: boolean
   }
+  fileMetadata?: FileMetadata
 }
 
 export default function UploadPage() {
@@ -36,11 +38,11 @@ export default function UploadPage() {
     isFree: true,
   })
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const newFiles: UploadFile[] = acceptedFiles.map(file => ({
       id: Math.random().toString(36).substring(7),
       file,
-      status: 'pending' as const,
+      status: 'analyzing' as const,
       progress: 0,
       metadata: {
         type: defaultSettings.type,
@@ -48,7 +50,27 @@ export default function UploadPage() {
         isFree: defaultSettings.isFree,
       }
     }))
+    
     setFiles(prev => [...prev, ...newFiles])
+    
+    // Extract metadata for each file
+    for (const uploadFile of newFiles) {
+      try {
+        const fileMetadata = await extractFileMetadata(uploadFile.file)
+        setFiles(prev => prev.map(f => 
+          f.id === uploadFile.id 
+            ? { ...f, status: 'pending' as const, fileMetadata }
+            : f
+        ))
+      } catch (error) {
+        console.error('Error extracting metadata:', error)
+        setFiles(prev => prev.map(f => 
+          f.id === uploadFile.id 
+            ? { ...f, status: 'pending' as const }
+            : f
+        ))
+      }
+    }
   }, [defaultSettings])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -118,8 +140,8 @@ export default function UploadPage() {
         // For demo purposes, create a placeholder URL
         const placeholderUrl = `/uploads/${fileName}`
         
-        // Update file record in database
-        await createFileRecord(file, placeholderUrl, metadata)
+        // Update file record in database with extracted metadata
+        await createFileRecord(file, placeholderUrl, metadata, uploadFile.fileMetadata)
         
         setFiles(prev => prev.map(f => 
           f.id === uploadFile.id 
@@ -135,8 +157,8 @@ export default function UploadPage() {
         .from('content')
         .getPublicUrl(filePath)
 
-      // Create record in database
-      await createFileRecord(file, urlData.publicUrl, metadata)
+      // Create record in database with extracted metadata
+      await createFileRecord(file, urlData.publicUrl, metadata, uploadFile.fileMetadata)
 
       // Update file status to success
       setFiles(prev => prev.map(f => 
@@ -155,19 +177,37 @@ export default function UploadPage() {
     }
   }
 
-  const createFileRecord = async (file: File, url: string, metadata: any) => {
+  const createFileRecord = async (file: File, url: string, metadata: any, fileMetadata?: FileMetadata) => {
+    const sanitizedName = sanitizeFilename(file.name)
+    
     const fileData: any = {
-      title: file.name.replace(/\.[^/.]+$/, ''), // Remove extension
+      title: sanitizedName,
       file_url: url,
-      file_size: file.size,
+      file_path: url, // Store the storage path
+      file_size_mb: fileMetadata?.fileSizeMB || (file.size / (1024 * 1024)),
       type: metadata.type,
       language: 'en',
       is_free: metadata.isFree,
+      category: metadata.category,
+    }
+
+    // Add page count for PDFs
+    if (fileMetadata?.pageCount) {
+      fileData.page_count = fileMetadata.pageCount
+    }
+    
+    // Add dimensions for images
+    if (fileMetadata?.dimensions) {
+      fileData.metadata = {
+        width: fileMetadata.dimensions.width,
+        height: fileMetadata.dimensions.height,
+        mimeType: fileMetadata.mimeType,
+        extension: fileMetadata.extension,
+      }
     }
 
     // Add specific fields based on type
     if (file.type.startsWith('image/')) {
-      // For images, we might want to extract dimensions
       fileData.type = 'image'
     } else if (file.type === 'application/pdf') {
       fileData.type = 'pdf'
@@ -216,6 +256,7 @@ export default function UploadPage() {
 
   const stats = {
     total: files.length,
+    analyzing: files.filter(f => f.status === 'analyzing').length,
     pending: files.filter(f => f.status === 'pending').length,
     uploading: files.filter(f => f.status === 'uploading').length,
     success: files.filter(f => f.status === 'success').length,
@@ -235,11 +276,17 @@ export default function UploadPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600">Total Files</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
         </div>
+        {stats.analyzing > 0 && (
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <p className="text-sm text-gray-600">Analyzing</p>
+            <p className="text-2xl font-bold text-purple-600 mt-1">{stats.analyzing}</p>
+          </div>
+        )}
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm text-gray-600">Pending</p>
           <p className="text-2xl font-bold text-yellow-600 mt-1">{stats.pending}</p>
@@ -411,6 +458,9 @@ export default function UploadPage() {
 
                      {/* Status Icon for Mobile */}
                     <div className="sm:hidden flex-shrink-0">
+                      {uploadFile.status === 'analyzing' && (
+                        <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
+                      )}
                       {uploadFile.status === 'pending' && (
                         <button
                           onClick={() => removeFile(uploadFile.id)}
@@ -438,8 +488,15 @@ export default function UploadPage() {
                     </p>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                       <p className="text-xs text-gray-500">
-                        {formatFileSize(uploadFile.file.size)}
+                        {uploadFile.fileMetadata?.fileSizeMB 
+                          ? `${uploadFile.fileMetadata.fileSizeMB} MB`
+                          : formatFileSize(uploadFile.file.size)}
                       </p>
+                      {uploadFile.fileMetadata?.pageCount && (
+                        <p className="text-xs text-gray-500">
+                          {uploadFile.fileMetadata.pageCount} pages
+                        </p>
+                      )}
                       <p className="text-xs text-gray-500">
                         Type: {uploadFile.metadata.type}
                       </p>
@@ -473,6 +530,9 @@ export default function UploadPage() {
 
                   {/* Status Icon - Desktop */}
                   <div className="hidden sm:block flex-shrink-0">
+                    {uploadFile.status === 'analyzing' && (
+                      <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
+                    )}
                     {uploadFile.status === 'pending' && (
                       <button
                         onClick={() => removeFile(uploadFile.id)}
