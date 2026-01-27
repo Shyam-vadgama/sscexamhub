@@ -230,7 +230,7 @@ export default function StudyMaterialsPage() {
               <div className="space-y-2 mb-4 text-sm text-gray-600">
                 <div className="flex items-center justify-between">
                   <span>Language:</span>
-                  <span className="font-medium">{material.language.toUpperCase()}</span>
+                  <span className="font-medium">{material.language === 'both' ? 'BILINGUAL' : material.language.toUpperCase()}</span>
                 </div>
                 {material.file_size && (
                   <div className="flex items-center justify-between">

@@ -25,7 +25,7 @@ export function AddMaterialDialog({ open, onOpenChange, onSuccess }: AddMaterial
     title: '',
     title_hi: '',
     type: 'pdf',
-    language: 'bilingual',
+    language: 'both',
     is_free: true,
     content_text: '',
     description_en: '',
@@ -66,7 +66,7 @@ export function AddMaterialDialog({ open, onOpenChange, onSuccess }: AddMaterial
         return
       }
 
-      let file_url = null
+      let file_url = ''
       let file_size = null
 
       // Handle file upload for PDFs
@@ -130,7 +130,7 @@ export function AddMaterialDialog({ open, onOpenChange, onSuccess }: AddMaterial
         title: '',
         title_hi: '',
         type: 'pdf',
-        language: 'bilingual',
+        language: 'both',
         is_free: true,
         content_text: '',
         description_en: '',
@@ -180,7 +180,7 @@ export function AddMaterialDialog({ open, onOpenChange, onSuccess }: AddMaterial
                 >
                   <option value="en">English Only</option>
                   <option value="hi">Hindi Only</option>
-                  <option value="bilingual">Bilingual</option>
+                  <option value="both">Bilingual</option>
                 </Select>
               </div>
 

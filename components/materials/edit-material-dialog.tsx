@@ -27,7 +27,7 @@ export function EditMaterialDialog({ open, onOpenChange, onSuccess, material }: 
     title: '',
     title_hi: '',
     type: 'pdf',
-    language: 'bilingual',
+    language: 'both',
     is_free: true,
     content_text: '',
     description_en: '',
@@ -42,7 +42,7 @@ export function EditMaterialDialog({ open, onOpenChange, onSuccess, material }: 
         title: material.title || '',
         title_hi: material.title_hi || '',
         type: material.type || 'pdf',
-        language: material.language || 'bilingual',
+        language: material.language || 'both',
         is_free: material.is_free || false,
         content_text: material.content_text || '',
         description_en: material.description_en || '',
@@ -117,7 +117,7 @@ export function EditMaterialDialog({ open, onOpenChange, onSuccess, material }: 
           type: formData.type,
           language: formData.language,
           is_free: formData.is_free,
-          file_url,
+          file_url: file_url || '',
           file_size, // update size if new file
           page_count: formData.page_count,
           content_text: formData.content_text || null,
@@ -174,7 +174,7 @@ export function EditMaterialDialog({ open, onOpenChange, onSuccess, material }: 
                 >
                   <option value="en">English Only</option>
                   <option value="hi">Hindi Only</option>
-                  <option value="bilingual">Bilingual</option>
+                  <option value="both">Bilingual</option>
                 </Select>
               </div>
 
