@@ -1,13 +1,14 @@
 // Environment variables validation
 export function validateEnvironmentVariables() {
-  const requiredEnvVars = [
-    'NEXT_PUBLIC_SUPABASE_URL',
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY'
-  ];
+  const missingEnvVars: string[] = [];
 
-  const missingEnvVars = requiredEnvVars.filter(
-    (envVar) => !process.env[envVar]
-  );
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    missingEnvVars.push('NEXT_PUBLIC_SUPABASE_URL');
+  }
+
+  if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    missingEnvVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  }
 
   if (missingEnvVars.length > 0) {
     throw new Error(
