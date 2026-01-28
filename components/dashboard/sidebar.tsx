@@ -14,6 +14,7 @@ import {
   Shield,
   Upload,
   Database,
+  ListTodo,
 } from 'lucide-react'
 
 const navigation = [
@@ -41,6 +42,11 @@ const navigation = [
     name: 'Study Materials',
     href: '/dashboard/materials',
     icon: BookOpen,
+  },
+  {
+    name: 'Study Templates',
+    href: '/dashboard/templates',
+    icon: ListTodo,
   },
   {
     name: 'Content Upload',
