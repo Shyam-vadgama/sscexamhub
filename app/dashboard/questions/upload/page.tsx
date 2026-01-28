@@ -39,7 +39,7 @@ export default function BulkUploadPage() {
       }
     };
     fetchTests();
-  }, []);
+  }, [supabase]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0]

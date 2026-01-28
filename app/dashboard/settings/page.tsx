@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -105,17 +105,46 @@ export default function SettingsPage() {
   const [showAddAdmin, setShowAddAdmin] = useState(false)
   const [newAdminEmail, setNewAdminEmail] = useState('')
 
-  useEffect(() => {
-    loadSettings()
-  }, [])
+  const loadSettings = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('key, value')
 
-  useEffect(() => {
-    if (activeTab === 'admins') {
-      loadAdmins()
+      if (error) {
+        console.error('Error fetching settings:', error)
+        // Fallback to localStorage if table doesn't exist or error occurs
+        const storedSettings = localStorage.getItem('adminSettings')
+        if (storedSettings) {
+          setSettings(JSON.parse(storedSettings))
+        }
+        return
+      }
+
+      if (data && data.length > 0) {
+        setSettings(prevSettings => {
+          const newSettings = { ...prevSettings }
+          data.forEach(item => {
+            if (item.key in newSettings) {
+              // @ts-ignore
+              newSettings[item.key] = item.value
+            }
+          })
+          return newSettings
+        })
+      } else {
+        // Try loading from localStorage if no DB settings found
+        const storedSettings = localStorage.getItem('adminSettings')
+        if (storedSettings) {
+          setSettings(JSON.parse(storedSettings))
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load settings:', error)
     }
-  }, [activeTab])
+  }, [supabase])
 
-  const loadAdmins = async () => {
+  const loadAdmins = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -128,7 +157,17 @@ export default function SettingsPage() {
       console.error('Failed to load admins:', error)
       toast.error('Failed to load admin users')
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
+
+  useEffect(() => {
+    if (activeTab === 'admins') {
+      loadAdmins()
+    }
+  }, [activeTab, loadAdmins])
 
   const handleAddAdmin = async () => {
     if (!newAdminEmail) return
@@ -180,43 +219,6 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Failed to remove admin:', error)
       toast.error('Failed to remove admin')
-    }
-  }
-
-  const loadSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('settings')
-        .select('key, value')
-
-      if (error) {
-        console.error('Error fetching settings:', error)
-        // Fallback to localStorage if table doesn't exist or error occurs
-        const storedSettings = localStorage.getItem('adminSettings')
-        if (storedSettings) {
-          setSettings(JSON.parse(storedSettings))
-        }
-        return
-      }
-
-      if (data && data.length > 0) {
-        const newSettings = { ...settings }
-        data.forEach(item => {
-          if (item.key in newSettings) {
-            // @ts-ignore
-            newSettings[item.key] = item.value
-          }
-        })
-        setSettings(newSettings)
-      } else {
-        // Try loading from localStorage if no DB settings found
-        const storedSettings = localStorage.getItem('adminSettings')
-        if (storedSettings) {
-          setSettings(JSON.parse(storedSettings))
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load settings:', error)
     }
   }
 

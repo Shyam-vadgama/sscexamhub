@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -35,14 +35,7 @@ export function AddQuestionsDialog({ open, onOpenChange, onSuccess, testId, exis
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    if (open) {
-      loadQuestions()
-      setSelectedQuestions(new Set())
-    }
-  }, [open, searchQuery, selectedSubject])
-
-  const loadQuestions = async () => {
+  const loadQuestions = useCallback(async () => {
     setLoading(true)
     try {
       let query = supabase
@@ -71,7 +64,14 @@ export function AddQuestionsDialog({ open, onOpenChange, onSuccess, testId, exis
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, selectedSubject, searchQuery, existingQuestionIds])
+
+  useEffect(() => {
+    if (open) {
+      loadQuestions()
+      setSelectedQuestions(new Set())
+    }
+  }, [open, loadQuestions])
 
   const toggleQuestion = (questionId: string) => {
     const newSelected = new Set(selectedQuestions)

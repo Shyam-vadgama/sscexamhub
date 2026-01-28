@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,11 +37,7 @@ export default function StudyMaterialsPage() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null)
 
-  useEffect(() => {
-    loadMaterials()
-  }, [filterType, searchQuery])
-
-  const loadMaterials = async () => {
+  const loadMaterials = useCallback(async () => {
     setLoading(true)
     try {
       let query = supabase
@@ -68,7 +64,11 @@ export default function StudyMaterialsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, filterType, searchQuery])
+
+  useEffect(() => {
+    loadMaterials()
+  }, [loadMaterials])
 
   const deleteMaterial = async (materialId: string) => {
     if (!confirm('Are you sure you want to delete this material?')) return

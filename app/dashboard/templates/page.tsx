@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,11 +29,7 @@ export default function TemplatesPage() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<StudyTemplate | null>(null)
 
-  useEffect(() => {
-    loadTemplates()
-  }, [searchQuery])
-
-  const loadTemplates = async () => {
+  const loadTemplates = useCallback(async () => {
     setLoading(true)
     try {
       let query = supabase
@@ -56,7 +52,11 @@ export default function TemplatesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, searchQuery])
+
+  useEffect(() => {
+    loadTemplates()
+  }, [loadTemplates])
 
   const deleteTemplate = async (id: string) => {
     if (!confirm('Are you sure you want to delete this template?')) return
@@ -151,7 +151,7 @@ export default function TemplatesPage() {
               className="bg-white rounded-lg border border-gray-200 p-6 flex flex-col hover:shadow-lg transition-shadow"
             >
               <div className="flex justify-between items-start mb-4">
-                <Badge variant={template.is_active ? 'success' : 'secondary'}>
+                <Badge variant={template.is_active ? 'success' : 'default'}>
                   {template.is_active ? 'Active' : 'Draft'}
                 </Badge>
                 <div className="flex space-x-1">

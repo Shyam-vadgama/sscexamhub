@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,11 +42,7 @@ export default function DatabasePage() {
   const [pageSize] = useState(50)
   const [viewRecord, setViewRecord] = useState<any>(null)
 
-  useEffect(() => {
-    loadTableData()
-  }, [selectedTable, page])
-
-  const loadTableData = async () => {
+  const loadTableData = useCallback(async () => {
     setLoading(true)
     try {
       const start = (page - 1) * pageSize
@@ -78,7 +74,11 @@ export default function DatabasePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, selectedTable, page, pageSize])
+
+  useEffect(() => {
+    loadTableData()
+  }, [loadTableData])
 
   const searchTable = async () => {
     if (!searchQuery.trim()) {

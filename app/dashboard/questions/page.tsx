@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -39,11 +39,7 @@ export default function QuestionsPage() {
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null)
   const pageSize = 20
 
-  useEffect(() => {
-    loadQuestions()
-  }, [currentPage, filterSubject, filterDifficulty, searchQuery])
-
-  const loadQuestions = async () => {
+  const loadQuestions = useCallback(async () => {
     setLoading(true)
     try {
       let query = supabase
@@ -76,7 +72,11 @@ export default function QuestionsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, currentPage, filterSubject, filterDifficulty, searchQuery, pageSize])
+
+  useEffect(() => {
+    loadQuestions()
+  }, [loadQuestions])
 
   const deleteQuestion = async (questionId: string) => {
     if (!confirm('Are you sure you want to delete this question?')) return

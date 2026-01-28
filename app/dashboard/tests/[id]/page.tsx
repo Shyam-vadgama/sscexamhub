@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/button'
@@ -52,13 +52,7 @@ export default function TestDetailsPage() {
   
   const supabase = createClient()
 
-  useEffect(() => {
-    if (params.id) {
-      loadTestDetails()
-    }
-  }, [params.id])
-
-  const loadTestDetails = async () => {
+  const loadTestDetails = useCallback(async () => {
     try {
       setLoading(true)
       
@@ -103,7 +97,13 @@ export default function TestDetailsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, params.id])
+
+  useEffect(() => {
+    if (params.id) {
+      loadTestDetails()
+    }
+  }, [params.id, loadTestDetails])
 
   const removeQuestionFromTest = async (questionId: string) => {
     if (!confirm('Are you sure you want to remove this question from the test?')) return

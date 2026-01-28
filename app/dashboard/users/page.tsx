@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,11 +31,7 @@ export default function UsersPage() {
   const [totalPages, setTotalPages] = useState(1)
   const pageSize = 20
 
-  useEffect(() => {
-    loadUsers()
-  }, [currentPage, filterPlan, searchQuery])
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setLoading(true)
     try {
       let query = supabase
@@ -65,7 +61,11 @@ export default function UsersPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, currentPage, filterPlan, searchQuery, pageSize])
+
+  useEffect(() => {
+    loadUsers()
+  }, [loadUsers])
 
   const deleteUser = async (userId: string) => {
     if (!confirm('Are you sure you want to delete this user?')) return
