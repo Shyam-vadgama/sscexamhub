@@ -28,29 +28,22 @@ export default function DashboardPage() {
 
   const loadStats = useCallback(async () => {
     try {
-      // Get user count
-      const { count: userCount } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true })
-
-      // Get test count
-      const { count: testCount } = await supabase
-        .from('tests')
-        .select('*', { count: 'exact', head: true })
-
-      // Get question count
-      const { count: questionCount } = await supabase
-        .from('questions')
-        .select('*', { count: 'exact', head: true })
-
       // Get active users (last 7 days)
       const sevenDaysAgo = new Date()
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-      
-      const { count: activeCount } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true })
-        .gte('last_active_date', sevenDaysAgo.toISOString())
+
+      // ⚡ Bolt: Parallelize independent requests to reduce total loading time
+      const [
+        { count: userCount },
+        { count: testCount },
+        { count: questionCount },
+        { count: activeCount }
+      ] = await Promise.all([
+        supabase.from('users').select('*', { count: 'exact', head: true }),
+        supabase.from('tests').select('*', { count: 'exact', head: true }),
+        supabase.from('questions').select('*', { count: 'exact', head: true }),
+        supabase.from('users').select('*', { count: 'exact', head: true }).gte('last_active_date', sevenDaysAgo.toISOString())
+      ])
 
       setStats({
         totalUsers: userCount || 0,
