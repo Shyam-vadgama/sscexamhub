@@ -36,6 +36,7 @@ interface Test {
   is_free: boolean
   is_live?: boolean
   total_attempts?: number
+  test_attempts?: { count: number }[]
   created_at: string
 }
 
@@ -55,7 +56,7 @@ export default function TestsPage() {
     try {
       let query = supabase
         .from('tests')
-        .select('*')
+        .select('*, test_attempts(count)')
         .order('created_at', { ascending: false })
 
       if (filterType !== 'all') {
@@ -224,7 +225,7 @@ export default function TestsPage() {
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
                   <Users className="w-4 h-4 mr-2" />
-                  {test.total_attempts} attempts
+                  {test.test_attempts?.[0]?.count || 0} attempts
                 </div>
               </div>
 
