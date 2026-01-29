@@ -28,6 +28,8 @@ const TABLES = [
   { name: 'content', label: 'Content' },
   { name: 'test_attempts', label: 'Test Attempts' },
   { name: 'payments', label: 'Payments' },
+  { name: 'test_questions', label: 'Test Questions' },
+  { name: 'settings', label: 'Settings' },
 ]
 
 export default function DatabasePage() {

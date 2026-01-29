@@ -50,7 +50,7 @@ Thumbs.db
 
 # Documentation and Database files
 *.md
-*.sql
+# *.sql
 *.sqlite
 *.sqlite3
 *.db
@@ -61,7 +61,7 @@ debug-schema.js
 setup-content-storage.js
 
 # Migration files directory
-/migrations/
+# /migrations/
 
 # Logs
 *.log

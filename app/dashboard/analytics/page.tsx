@@ -111,11 +111,17 @@ export default function AnalyticsPage() {
       const freeUsers = users?.filter(u => u.subscription_plan === 'free').length || 0
       const proUsers = users?.filter(u => u.subscription_plan === 'pro').length || 0
 
-      // Mock user growth data (in production, fetch from database)
-      const userGrowth = Array.from({ length: 30 }, (_, i) => ({
-        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        users: Math.floor(totalUsers * (0.5 + (i / 29) * 0.5))
-      }))
+      // Fetch user growth data
+      const days = timeRange === '7days' ? 7 : timeRange === '30days' ? 30 : timeRange === '90days' ? 90 : 365
+      const { data: userGrowthData, error: userGrowthError } = await supabase
+        .rpc('get_daily_registrations', { days })
+
+      if (userGrowthError) console.error('Error fetching user growth:', userGrowthError)
+
+      const userGrowth = userGrowthData?.map((d: any) => ({
+        date: d.date,
+        users: Number(d.count)
+      })) || []
 
       // Fetch content metrics
       const { data: content, error: contentError } = await supabase
@@ -154,11 +160,13 @@ export default function AnalyticsPage() {
         ? (attempts.filter(a => a.status === 'completed').length / attempts.length) * 100
         : 0
 
-      // Mock popular tests (in production, aggregate from database)
-      const popularTests = tests?.slice(0, 5).map(t => ({
-        name: t.title,
-        attempts: Math.floor(Math.random() * 100) + 20
-      })) || []
+      // Fetch popular tests
+      const { data: popularTestsData, error: popularTestsError } = await supabase
+        .rpc('get_popular_tests', { limit_count: 5 })
+
+      if (popularTestsError) console.error('Error fetching popular tests:', popularTestsError)
+
+      const popularTests = popularTestsData || []
 
       // Mock revenue metrics
       const { data: payments, error: paymentsError } = await supabase
@@ -173,10 +181,14 @@ export default function AnalyticsPage() {
         { name: 'Pro', value: totalRevenue }
       ]
 
-      const revenueGrowth = Array.from({ length: 6 }, (_, i) => ({
-        month: new Date(Date.now() - (5 - i) * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short' }),
-        revenue: Math.floor(totalRevenue * (0.3 + (i / 5) * 0.7))
-      }))
+      // Fetch revenue growth
+      const months = timeRange === '1year' ? 12 : 6
+      const { data: revenueGrowthData, error: revenueGrowthError } = await supabase
+        .rpc('get_monthly_revenue', { months })
+
+      if (revenueGrowthError) console.error('Error fetching revenue growth:', revenueGrowthError)
+
+      const revenueGrowth = revenueGrowthData || []
 
       setAnalytics({
         userMetrics: {
