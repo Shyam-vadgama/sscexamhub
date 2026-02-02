@@ -15,6 +15,7 @@ import {
   Upload,
   Database,
   ListTodo,
+  Newspaper,
 } from 'lucide-react'
 
 const navigation = [
@@ -22,6 +23,11 @@ const navigation = [
     name: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
+  },
+  {
+    name: 'News Feed',
+    href: '/dashboard/news',
+    icon: Newspaper,
   },
   {
     name: 'Users',
