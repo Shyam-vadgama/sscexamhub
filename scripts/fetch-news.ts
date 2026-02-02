@@ -7,12 +7,13 @@ import path from 'path';
 // Load environment variables from .env file
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SUPABASE_URL) {
+  console.error('ERROR: NEXT_PUBLIC_SUPABASE_URL is missing.');
+  process.exit(1);
+}
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error('Missing Supabase environment variables.');
-  console.error('Required: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY');
+if (!SUPABASE_KEY) {
+  console.error('ERROR: SUPABASE_SERVICE_ROLE_KEY is missing.');
   process.exit(1);
 }
 
