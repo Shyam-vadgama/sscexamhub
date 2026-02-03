@@ -68,6 +68,25 @@ async function fetchNews() {
 
   console.log(`Found ${newItems.length} potential items.`);
   
+  // Cleanup old news (older than 24 hours)
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    console.log(`Cleaning up news older than: ${twentyFourHoursAgo}`);
+    
+    const { count, error: deleteError } = await supabase
+      .from('news')
+      .delete({ count: 'exact' })
+      .lt('pub_date', twentyFourHoursAgo);
+
+    if (deleteError) {
+      console.error('Error deleting old news:', deleteError.message);
+    } else {
+      console.log(`Deleted ${count} old news items.`);
+    }
+  } catch (error) {
+    console.error('Unexpected error during cleanup:', error);
+  }
+
   // Process items
   let addedCount = 0;
   for (const item of newItems) {
@@ -77,7 +96,7 @@ async function fetchNews() {
         .from('news')
         .select('id')
         .eq('link', item.link)
-        .single();
+        .maybeSingle(); // Changed to maybeSingle to avoid errors if 0 or multiple found (though link should be unique)
 
       if (existing) {
         // console.log(`Skipping duplicate: ${item.title}`);
