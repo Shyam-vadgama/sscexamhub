@@ -9,6 +9,7 @@ import { Search, Plus, Filter, Download, Eye, Edit, Trash, ArrowUpDown, ArrowUp,
 import toast from 'react-hot-toast'
 import { formatDate } from '@/lib/utils'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { logAction } from '@/lib/logger'
 
 interface User {
   id: string
@@ -35,6 +36,7 @@ function UsersPageContent() {
   const [filterPlan, setFilterPlan] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const pageSize = 20
 
   // Get sort params from URL or default
@@ -103,10 +105,47 @@ function UsersPageContent() {
 
       if (error) throw error
 
+      await logAction('DELETE_USER', 'users', userId, { deleted_by: 'admin' })
       toast.success('User deleted successfully')
       loadUsers()
     } catch (error: any) {
       toast.error('Failed to delete user')
+    }
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === users.length) {
+      setSelectedIds([])
+    } else {
+      setSelectedIds(users.map(u => u.id))
+    }
+  }
+
+  const toggleSelect = (id: string) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(sid => sid !== id))
+    } else {
+      setSelectedIds([...selectedIds, id])
+    }
+  }
+
+  const bulkDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selectedIds.length} users?`)) return
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .in('id', selectedIds)
+
+      if (error) throw error
+
+      await logAction('BULK_DELETE_USERS', 'users', null, { count: selectedIds.length, ids: selectedIds })
+      toast.success(`${selectedIds.length} users deleted successfully`)
+      setSelectedIds([])
+      loadUsers()
+    } catch (error: any) {
+      toast.error('Failed to delete users')
     }
   }
 
@@ -158,6 +197,12 @@ function UsersPageContent() {
           </p>
         </div>
         <div className="flex space-x-3">
+          {selectedIds.length > 0 && (
+            <Button variant="destructive" onClick={bulkDelete}>
+              <Trash className="w-4 h-4 mr-2" />
+              Delete ({selectedIds.length})
+            </Button>
+          )}
           <Button variant="outline" onClick={exportUsers}>
             <Download className="w-4 h-4 mr-2" />
             Export
@@ -224,6 +269,14 @@ function UsersPageContent() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
+                    <th className="px-6 py-3 w-4">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedIds.length === users.length && users.length > 0}
+                        onChange={toggleSelectAll}
+                        className="rounded border-gray-300"
+                      />
+                    </th>
                     <th 
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('name')}
@@ -286,6 +339,14 @@ function UsersPageContent() {
                 <tbody className="divide-y divide-gray-200">
                   {users.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedIds.includes(user.id)}
+                          onChange={() => toggleSelect(user.id)}
+                          className="rounded border-gray-300"
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <div>
                           <p className="font-medium text-gray-900">
