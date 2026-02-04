@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { AddQuestionDialog } from '@/components/questions/add-question-dialog'
 import { EditQuestionDialog } from '@/components/questions/edit-question-dialog'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 
 interface Question {
   id: string
@@ -25,8 +26,12 @@ interface Question {
   created_at: string
 }
 
-export default function QuestionsPage() {
+function QuestionsPageContent() {
   const supabase = createClient()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -39,13 +44,25 @@ export default function QuestionsPage() {
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null)
   const pageSize = 20
 
+  // Get sort params from URL or default
+  const sortColumn = searchParams.get('sort') || 'created_at'
+  const sortOrder = searchParams.get('order') || 'desc'
+
+  const handleSortChange = (value: string) => {
+    const params = new URLSearchParams(searchParams)
+    const [col, order] = value.split('-')
+    params.set('sort', col)
+    params.set('order', order)
+    router.push(`${pathname}?${params.toString()}`)
+  }
+
   const loadQuestions = useCallback(async () => {
     setLoading(true)
     try {
       let query = supabase
         .from('questions')
         .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
+        .order(sortColumn, { ascending: sortOrder === 'asc' })
         .range((currentPage - 1) * pageSize, currentPage * pageSize - 1)
 
       if (filterSubject !== 'all') {
@@ -72,7 +89,7 @@ export default function QuestionsPage() {
     } finally {
       setLoading(false)
     }
-  }, [supabase, currentPage, filterSubject, filterDifficulty, searchQuery, pageSize])
+  }, [supabase, currentPage, filterSubject, filterDifficulty, searchQuery, pageSize, sortColumn, sortOrder])
 
   useEffect(() => {
     loadQuestions()
@@ -209,6 +226,18 @@ export default function QuestionsPage() {
               <option value="easy">Easy</option>
               <option value="medium">Medium</option>
               <option value="hard">Hard</option>
+            </select>
+          </div>
+
+          {/* Sort Dropdown */}
+          <div>
+            <select
+              value={`${sortColumn}-${sortOrder}`}
+              onChange={(e) => handleSortChange(e.target.value)}
+              className="w-full h-10 px-3 rounded-md border border-gray-200 bg-white text-sm"
+            >
+              <option value="created_at-desc">Newest First</option>
+              <option value="created_at-asc">Oldest First</option>
             </select>
           </div>
 
@@ -351,5 +380,13 @@ export default function QuestionsPage() {
         />
       )}
     </div>
+  )
+}
+
+export default function QuestionsPage() {
+  return (
+    <Suspense fallback={<div>Loading questions...</div>}>
+      <QuestionsPageContent />
+    </Suspense>
   )
 }

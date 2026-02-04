@@ -1,15 +1,16 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Search, Plus, Edit, Trash, Copy, ListTodo } from 'lucide-react'
+import { Search, Plus, Edit, Trash, Copy, ListTodo, Filter } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { formatDate } from '@/lib/utils'
 import { AddTemplateDialog } from '@/components/templates/add-template-dialog'
 import { EditTemplateDialog } from '@/components/templates/edit-template-dialog'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 
 interface StudyTemplate {
   id: string
@@ -20,8 +21,12 @@ interface StudyTemplate {
   created_at: string
 }
 
-export default function TemplatesPage() {
+function TemplatesPageContent() {
   const supabase = createClient()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
   const [templates, setTemplates] = useState<StudyTemplate[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -29,13 +34,25 @@ export default function TemplatesPage() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<StudyTemplate | null>(null)
 
+  // Get sort params from URL or default
+  const sortColumn = searchParams.get('sort') || 'created_at'
+  const sortOrder = searchParams.get('order') || 'desc'
+
+  const handleSortChange = (value: string) => {
+    const params = new URLSearchParams(searchParams)
+    const [col, order] = value.split('-')
+    params.set('sort', col)
+    params.set('order', order)
+    router.push(`${pathname}?${params.toString()}`)
+  }
+
   const loadTemplates = useCallback(async () => {
     setLoading(true)
     try {
       let query = supabase
         .from('study_templates')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order(sortColumn, { ascending: sortOrder === 'asc' })
 
       if (searchQuery) {
         query = query.ilike('title', `%${searchQuery}%`)
@@ -52,7 +69,7 @@ export default function TemplatesPage() {
     } finally {
       setLoading(false)
     }
-  }, [supabase, searchQuery])
+  }, [supabase, searchQuery, sortColumn, sortOrder])
 
   useEffect(() => {
     loadTemplates()
@@ -112,14 +129,30 @@ export default function TemplatesPage() {
 
       {/* Filters */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <Input
-            placeholder="Search templates..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Input
+              placeholder="Search templates..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="w-full sm:w-48">
+            <select
+              value={`${sortColumn}-${sortOrder}`}
+              onChange={(e) => handleSortChange(e.target.value)}
+              className="w-full h-10 px-3 rounded-md border border-gray-200 bg-white text-sm"
+            >
+              <option value="created_at-desc">Newest First</option>
+              <option value="created_at-asc">Oldest First</option>
+              <option value="title-asc">Title (A-Z)</option>
+              <option value="title-desc">Title (Z-A)</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -221,5 +254,13 @@ export default function TemplatesPage() {
         template={selectedTemplate}
       />
     </div>
+  )
+}
+
+export default function TemplatesPage() {
+  return (
+    <Suspense fallback={<div>Loading templates...</div>}>
+      <TemplatesPageContent />
+    </Suspense>
   )
 }

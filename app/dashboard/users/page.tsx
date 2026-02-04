@@ -1,13 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Search, Plus, Filter, Download, Eye, Edit, Trash } from 'lucide-react'
+import { Search, Plus, Filter, Download, Eye, Edit, Trash, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { formatDate } from '@/lib/utils'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 
 interface User {
   id: string
@@ -22,8 +23,12 @@ interface User {
   last_active_date: string | null
 }
 
-export default function UsersPage() {
+function UsersPageContent() {
   const supabase = createClient()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -32,13 +37,32 @@ export default function UsersPage() {
   const [totalPages, setTotalPages] = useState(1)
   const pageSize = 20
 
+  // Get sort params from URL or default
+  const sortColumn = searchParams.get('sort') || 'created_at'
+  const sortOrder = searchParams.get('order') || 'desc'
+
+  const handleSort = (column: string) => {
+    const newOrder = column === sortColumn && sortOrder === 'asc' ? 'desc' : 'asc'
+    const params = new URLSearchParams(searchParams)
+    params.set('sort', column)
+    params.set('order', newOrder)
+    router.push(`${pathname}?${params.toString()}`)
+  }
+
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sortColumn !== column) return <ArrowUpDown className="w-4 h-4 ml-1 text-gray-400" />
+    return sortOrder === 'asc' ? 
+      <ArrowUp className="w-4 h-4 ml-1 text-gray-900" /> : 
+      <ArrowDown className="w-4 h-4 ml-1 text-gray-900" />
+  }
+
   const loadUsers = useCallback(async () => {
     setLoading(true)
     try {
       let query = supabase
         .from('users')
         .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
+        .order(sortColumn, { ascending: sortOrder === 'asc' })
         .range((currentPage - 1) * pageSize, currentPage * pageSize - 1)
 
       // Apply filters
@@ -62,7 +86,7 @@ export default function UsersPage() {
     } finally {
       setLoading(false)
     }
-  }, [supabase, currentPage, filterPlan, searchQuery, pageSize])
+  }, [supabase, currentPage, filterPlan, searchQuery, pageSize, sortColumn, sortOrder])
 
   useEffect(() => {
     loadUsers()
@@ -91,6 +115,7 @@ export default function UsersPage() {
       const { data, error } = await supabase
         .from('users')
         .select('*')
+        .order(sortColumn, { ascending: sortOrder === 'asc' })
         .csv()
 
       if (error) throw error
@@ -199,23 +224,59 @@ export default function UsersPage() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      User
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('name')}
+                    >
+                      <div className="flex items-center">
+                        User
+                        <SortIcon column="name" />
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Contact
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('phone')}
+                    >
+                      <div className="flex items-center">
+                        Contact
+                        <SortIcon column="phone" />
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Plan
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('plan')}
+                    >
+                      <div className="flex items-center">
+                        Plan
+                        <SortIcon column="plan" />
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Exam
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('exam_type')}
+                    >
+                      <div className="flex items-center">
+                        Exam
+                        <SortIcon column="exam_type" />
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Stats
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('coins')}
+                    >
+                      <div className="flex items-center">
+                        Stats
+                        <SortIcon column="coins" />
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Joined
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('created_at')}
+                    >
+                      <div className="flex items-center">
+                        Joined
+                        <SortIcon column="created_at" />
+                      </div>
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                       Actions
@@ -322,5 +383,13 @@ export default function UsersPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function UsersPage() {
+  return (
+    <Suspense fallback={<div>Loading users...</div>}>
+      <UsersPageContent />
+    </Suspense>
   )
 }

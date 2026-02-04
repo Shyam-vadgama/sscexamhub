@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
 import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
@@ -40,9 +40,12 @@ interface Test {
   created_at: string
 }
 
-export default function TestsPage() {
+function TestsPageContent() {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+
   const [tests, setTests] = useState<Test[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -51,13 +54,25 @@ export default function TestsPage() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [selectedTest, setSelectedTest] = useState<Test | null>(null)
 
+  // Get sort params from URL or default
+  const sortColumn = searchParams.get('sort') || 'created_at'
+  const sortOrder = searchParams.get('order') || 'desc'
+
+  const handleSortChange = (value: string) => {
+    const params = new URLSearchParams(searchParams)
+    const [col, order] = value.split('-')
+    params.set('sort', col)
+    params.set('order', order)
+    router.push(`${pathname}?${params.toString()}`)
+  }
+
   const loadTests = useCallback(async () => {
     setLoading(true)
     try {
       let query = supabase
         .from('tests')
         .select('*, test_attempts(count)')
-        .order('created_at', { ascending: false })
+        .order(sortColumn, { ascending: sortOrder === 'asc' })
 
       if (filterType !== 'all') {
         query = query.eq('test_type', filterType)
@@ -78,7 +93,7 @@ export default function TestsPage() {
     } finally {
       setLoading(false)
     }
-  }, [filterType, searchQuery, supabase])
+  }, [filterType, searchQuery, supabase, sortColumn, sortOrder])
 
   useEffect(() => {
     loadTests()
@@ -159,6 +174,20 @@ export default function TestsPage() {
               <option value="sectional">Sectional</option>
               <option value="pyq">Previous Year</option>
               <option value="daily_practice">Daily Practice</option>
+            </select>
+          </div>
+
+          {/* Sort Dropdown */}
+          <div>
+            <select
+              value={`${sortColumn}-${sortOrder}`}
+              onChange={(e) => handleSortChange(e.target.value)}
+              className="w-full h-10 px-3 rounded-md border border-gray-200 bg-white text-sm"
+            >
+              <option value="created_at-desc">Newest First</option>
+              <option value="created_at-asc">Oldest First</option>
+              <option value="title-asc">Title (A-Z)</option>
+              <option value="title-desc">Title (Z-A)</option>
             </select>
           </div>
 
@@ -298,5 +327,13 @@ export default function TestsPage() {
         />
       )}
     </div>
+  )
+}
+
+export default function TestsPage() {
+  return (
+    <Suspense fallback={<div>Loading tests...</div>}>
+      <TestsPageContent />
+    </Suspense>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import toast from 'react-hot-toast'
 import { formatDate, formatFileSize } from '@/lib/utils'
 import { AddMaterialDialog } from '@/components/materials/add-material-dialog'
 import { EditMaterialDialog } from '@/components/materials/edit-material-dialog'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 
 interface Material {
   id: string
@@ -27,8 +28,12 @@ interface Material {
   created_at: string
 }
 
-export default function StudyMaterialsPage() {
+function StudyMaterialsPageContent() {
   const supabase = createClient()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
   const [materials, setMaterials] = useState<Material[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -37,13 +42,25 @@ export default function StudyMaterialsPage() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null)
 
+  // Get sort params from URL or default
+  const sortColumn = searchParams.get('sort') || 'created_at'
+  const sortOrder = searchParams.get('order') || 'desc'
+
+  const handleSortChange = (value: string) => {
+    const params = new URLSearchParams(searchParams)
+    const [col, order] = value.split('-')
+    params.set('sort', col)
+    params.set('order', order)
+    router.push(`${pathname}?${params.toString()}`)
+  }
+
   const loadMaterials = useCallback(async () => {
     setLoading(true)
     try {
       let query = supabase
         .from('content')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order(sortColumn, { ascending: sortOrder === 'asc' })
 
       if (filterType !== 'all') {
         query = query.eq('type', filterType)
@@ -64,7 +81,7 @@ export default function StudyMaterialsPage() {
     } finally {
       setLoading(false)
     }
-  }, [supabase, filterType, searchQuery])
+  }, [supabase, filterType, searchQuery, sortColumn, sortOrder])
 
   useEffect(() => {
     loadMaterials()
@@ -170,10 +187,19 @@ export default function StudyMaterialsPage() {
             </select>
           </div>
 
-          <Button variant="outline" onClick={loadMaterials} className="w-full">
-            <Filter className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
+           {/* Sort Dropdown */}
+           <div>
+            <select
+              value={`${sortColumn}-${sortOrder}`}
+              onChange={(e) => handleSortChange(e.target.value)}
+              className="w-full h-10 px-3 rounded-md border border-gray-200 bg-white text-sm"
+            >
+              <option value="created_at-desc">Newest First</option>
+              <option value="created_at-asc">Oldest First</option>
+              <option value="title-asc">Title (A-Z)</option>
+              <option value="title-desc">Title (Z-A)</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -296,5 +322,13 @@ export default function StudyMaterialsPage() {
         material={selectedMaterial}
       />
     </div>
+  )
+}
+
+export default function StudyMaterialsPage() {
+  return (
+    <Suspense fallback={<div>Loading materials...</div>}>
+      <StudyMaterialsPageContent />
+    </Suspense>
   )
 }

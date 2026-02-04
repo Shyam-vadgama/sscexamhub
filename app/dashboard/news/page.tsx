@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Search, Filter, Trash, ExternalLink, RefreshCw } from 'lucide-react'
+import { Search, Filter, Trash, ExternalLink, RefreshCw, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { formatDate } from '@/lib/utils'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 
 interface NewsItem {
   id: string
@@ -18,8 +19,12 @@ interface NewsItem {
   created_at: string
 }
 
-export default function NewsPage() {
+function NewsPageContent() {
   const supabase = createClient()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
   const [news, setNews] = useState<NewsItem[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -27,13 +32,32 @@ export default function NewsPage() {
   const [totalPages, setTotalPages] = useState(1)
   const pageSize = 20
 
+  // Get sort params from URL or default
+  const sortColumn = searchParams.get('sort') || 'pub_date'
+  const sortOrder = searchParams.get('order') || 'desc'
+
+  const handleSort = (column: string) => {
+    const newOrder = column === sortColumn && sortOrder === 'asc' ? 'desc' : 'asc'
+    const params = new URLSearchParams(searchParams)
+    params.set('sort', column)
+    params.set('order', newOrder)
+    router.push(`${pathname}?${params.toString()}`)
+  }
+
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sortColumn !== column) return <ArrowUpDown className="w-4 h-4 ml-1 text-gray-400" />
+    return sortOrder === 'asc' ? 
+      <ArrowUp className="w-4 h-4 ml-1 text-gray-900" /> : 
+      <ArrowDown className="w-4 h-4 ml-1 text-gray-900" />
+  }
+
   const loadNews = useCallback(async () => {
     setLoading(true)
     try {
       let query = supabase
         .from('news')
         .select('*', { count: 'exact' })
-        .order('pub_date', { ascending: false })
+        .order(sortColumn, { ascending: sortOrder === 'asc' })
         .range((currentPage - 1) * pageSize, currentPage * pageSize - 1)
 
       if (searchQuery) {
@@ -52,7 +76,7 @@ export default function NewsPage() {
     } finally {
       setLoading(false)
     }
-  }, [supabase, currentPage, searchQuery, pageSize])
+  }, [supabase, currentPage, searchQuery, pageSize, sortColumn, sortOrder])
 
   useEffect(() => {
     loadNews()
@@ -127,14 +151,32 @@ export default function NewsPage() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-1/2">
-                      Title
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-1/2 cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('title')}
+                    >
+                      <div className="flex items-center">
+                        Title
+                        <SortIcon column="title" />
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Source
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('source')}
+                    >
+                      <div className="flex items-center">
+                        Source
+                        <SortIcon column="source" />
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Published
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('pub_date')}
+                    >
+                      <div className="flex items-center">
+                        Published
+                        <SortIcon column="pub_date" />
+                      </div>
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                       Actions
@@ -212,5 +254,13 @@ export default function NewsPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function NewsPage() {
+  return (
+    <Suspense fallback={<div>Loading news...</div>}>
+      <NewsPageContent />
+    </Suspense>
   )
 }
