@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/button'
@@ -265,12 +266,13 @@ export default function UsersPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end space-x-2">
-                          <button
+                          <Link
+                            href={`/dashboard/users/${user.id}`}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
                             title="View details"
                           >
                             <Eye className="w-4 h-4" />
-                          </button>
+                          </Link>
                           <button
                             className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
                             title="Edit user"
