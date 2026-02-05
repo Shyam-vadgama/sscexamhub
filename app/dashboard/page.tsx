@@ -13,6 +13,7 @@ import {
 import { StatsCard } from '@/components/dashboard/stats-card'
 import { RecentActivity } from '@/components/dashboard/recent-activity'
 import { UserGrowthChart } from '@/components/dashboard/user-growth-chart'
+import { LoginLogs } from '@/components/dashboard/login-logs'
 
 export default function DashboardPage() {
   const supabase = createClient()
@@ -126,6 +127,9 @@ export default function DashboardPage() {
         <UserGrowthChart />
         <RecentActivity />
       </div>
+
+      {/* Login Logs */}
+      <LoginLogs />
     </div>
   )
 }
