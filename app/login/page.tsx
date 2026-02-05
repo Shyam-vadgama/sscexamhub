@@ -41,6 +41,21 @@ export default function LoginPage() {
         throw new Error('Unauthorized: Admin access required')
       }
 
+      // Log login details
+      try {
+        const ipRes = await fetch('https://ipapi.co/json/')
+        const ipData = await ipRes.json()
+
+        await supabase.from('admin_login_logs').insert({
+          user_id: data.user.id,
+          ip_address: ipData.ip,
+          location: ipData,
+          user_agent: navigator.userAgent
+        })
+      } catch (logError) {
+        console.error('Failed to log login:', logError)
+      }
+
       toast.success('Login successful!')
       router.push('/dashboard')
       router.refresh()
