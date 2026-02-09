@@ -25,9 +25,25 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-  CommandShortcut,
 } from 'cmdk'
 import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
+
+const CommandShortcut = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLSpanElement>) => {
+  return (
+    <span
+      className={cn(
+        'ml-auto text-xs tracking-widest text-slate-500',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+CommandShortcut.displayName = 'CommandShortcut'
 
 export function CommandMenu() {
   const [open, setOpen] = React.useState(false)
