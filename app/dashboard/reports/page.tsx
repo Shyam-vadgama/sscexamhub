@@ -80,6 +80,16 @@ function ReportsPageContent() {
 
       if (error) throw error
 
+      // If resolved, send a targeted notification to the specific user
+      if (status === 'resolved') {
+        await supabase.from('app_notifications').insert({
+          title: 'Issue Resolved',
+          message: `Your report regarding "${selectedReport.type.replace('_', ' ')}" has been resolved. Note: ${adminNote || 'The issue has been fixed.'}`,
+          type: 'info',
+          target_audience: selectedReport.user_id
+        })
+      }
+
       toast.success(`Report marked as ${status}`)
       setDialogOpen(false)
       loadReports()
