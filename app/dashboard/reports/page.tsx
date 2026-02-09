@@ -164,7 +164,7 @@ function ReportsPageContent() {
               </div>
 
               <p className="text-gray-700 mt-2 mb-4 bg-gray-50 p-3 rounded-md border border-gray-100">
-                "{report.message}"
+                &quot;{report.message}&quot;
               </p>
 
               {report.admin_note && (

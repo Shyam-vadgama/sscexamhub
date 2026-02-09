@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, Suspense } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase-browser'
 import { Button } from '@/components/ui/button'
 import { Plus, Trash, Image as ImageIcon, ToggleLeft, ToggleRight, RefreshCw } from 'lucide-react'
@@ -96,10 +97,11 @@ function BannersPageContent() {
           banners.map((banner) => (
             <div key={banner.id} className={`bg-white rounded-xl border overflow-hidden shadow-sm transition-all ${!banner.is_active ? 'opacity-60' : ''}`}>
               <div className="aspect-[16/9] relative bg-gray-100">
-                <img 
+                <Image 
                   src={banner.image_url} 
                   alt={banner.title} 
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
                 <div className="absolute top-2 right-2 flex gap-2">
                   <button 
