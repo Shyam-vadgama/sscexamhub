@@ -11,15 +11,11 @@ create table if not exists audit_logs (
 -- Enable RLS
 alter table audit_logs enable row level security;
 
--- Policy: Admins can view logs
+-- Policy: Admins can view logs (using the is_admin() function)
 create policy "Admins can view audit logs"
   on audit_logs for select
   using (
-    exists (
-      select 1 from users
-      where users.id = auth.uid()
-      and users.role = 'admin'
-    )
+    is_admin()
   );
 
 -- Policy: Anyone (authenticated) can insert logs

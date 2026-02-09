@@ -16,6 +16,10 @@ import {
   Database,
   ListTodo,
   Newspaper,
+  Bell,
+  Image as ImageIcon,
+  Flag,
+  History
 } from 'lucide-react'
 
 const navigation = [
@@ -53,6 +57,26 @@ const navigation = [
     name: 'Study Templates',
     href: '/dashboard/templates',
     icon: ListTodo,
+  },
+  {
+    name: 'App Banners',
+    href: '/dashboard/banners',
+    icon: ImageIcon,
+  },
+  {
+    name: 'Notifications',
+    href: '/dashboard/notifications',
+    icon: Bell,
+  },
+  {
+    name: 'User Reports',
+    href: '/dashboard/reports',
+    icon: Flag,
+  },
+  {
+    name: 'Audit Logs',
+    href: '/dashboard/logs',
+    icon: History,
   },
   {
     name: 'Content Upload',

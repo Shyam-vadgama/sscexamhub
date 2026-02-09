@@ -11,7 +11,11 @@ import {
   Search,
   FileText,
   BarChart,
-  Database
+  Database,
+  Image as ImageIcon,
+  Bell,
+  Flag,
+  History
 } from 'lucide-react'
 import {
   CommandDialog,
@@ -57,7 +61,7 @@ export function CommandMenu() {
           />
           <CommandList className="max-h-[300px] overflow-y-auto overflow-x-hidden p-2">
             <CommandEmpty className="py-6 text-center text-sm text-slate-500">No results found.</CommandEmpty>
-            <CommandGroup heading="Suggestions" className="text-slate-500 p-1">
+            <CommandGroup heading="Main" className="text-slate-500 p-1">
               <CommandItem onSelect={() => runCommand(() => router.push('/dashboard/users'))} className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-slate-100 aria-selected:text-slate-900 cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
                 <span>Users</span>
@@ -72,7 +76,26 @@ export function CommandMenu() {
               </CommandItem>
             </CommandGroup>
             <CommandSeparator className="my-1 h-px bg-slate-200" />
-            <CommandGroup heading="Settings" className="text-slate-500 p-1">
+            <CommandGroup heading="Engagement" className="text-slate-500 p-1">
+              <CommandItem onSelect={() => runCommand(() => router.push('/dashboard/banners'))} className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-slate-100 aria-selected:text-slate-900 cursor-pointer">
+                <ImageIcon className="mr-2 h-4 w-4" />
+                <span>App Banners</span>
+              </CommandItem>
+              <CommandItem onSelect={() => runCommand(() => router.push('/dashboard/notifications'))} className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-slate-100 aria-selected:text-slate-900 cursor-pointer">
+                <Bell className="mr-2 h-4 w-4" />
+                <span>Notifications</span>
+              </CommandItem>
+              <CommandItem onSelect={() => runCommand(() => router.push('/dashboard/reports'))} className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-slate-100 aria-selected:text-slate-900 cursor-pointer">
+                <Flag className="mr-2 h-4 w-4" />
+                <span>User Reports</span>
+              </CommandItem>
+            </CommandGroup>
+            <CommandSeparator className="my-1 h-px bg-slate-200" />
+            <CommandGroup heading="System" className="text-slate-500 p-1">
+              <CommandItem onSelect={() => runCommand(() => router.push('/dashboard/logs'))} className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-slate-100 aria-selected:text-slate-900 cursor-pointer">
+                <History className="mr-2 h-4 w-4" />
+                <span>Audit Logs</span>
+              </CommandItem>
               <CommandItem onSelect={() => runCommand(() => router.push('/dashboard/settings'))} className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-slate-100 aria-selected:text-slate-900 cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
