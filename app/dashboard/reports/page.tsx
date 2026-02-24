@@ -82,12 +82,26 @@ function ReportsPageContent() {
 
       // If resolved, send a targeted notification to the specific user
       if (status === 'resolved') {
+        const message = `Your report regarding "${selectedReport.type.replace('_', ' ')}" has been resolved. Note: ${adminNote || 'The issue has been fixed.'}`;
+        
+        // 1. Database Notification
         await supabase.from('app_notifications').insert({
           title: 'Issue Resolved',
-          message: `Your report regarding "${selectedReport.type.replace('_', ' ')}" has been resolved. Note: ${adminNote || 'The issue has been fixed.'}`,
+          message: message,
           type: 'info',
           target_audience: selectedReport.user_id
-        })
+        });
+
+        // 2. Push Notification (Background)
+        fetch('/api/send-push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: selectedReport.user_id,
+            title: 'Issue Resolved ✅',
+            body: message
+          })
+        }).catch(err => console.error('Push notification failed:', err));
       }
 
       toast.success(`Report marked as ${status}`)

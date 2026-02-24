@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Mail, Phone, Calendar, Award, Clock, TrendingUp, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, Calendar, Award, Clock, TrendingUp, CheckCircle, XCircle, AlertCircle, Edit } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import {
   BarChart,
@@ -21,6 +21,7 @@ import {
   Cell,
 } from 'recharts'
 import toast from 'react-hot-toast'
+import { EditUserDialog } from '@/components/users/edit-user-dialog'
 
 interface UserProfile {
   id: string
@@ -80,6 +81,7 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
   const [performance, setPerformance] = useState<PerformanceSummary | null>(null)
   const [subjects, setSubjects] = useState<SubjectPerformance[]>([])
   const [recentTests, setRecentTests] = useState<TestAttempt[]>([])
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
 
   const loadUserData = useCallback(async () => {
     setLoading(true)
@@ -182,19 +184,38 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
     )
   }
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8']
+  const getPlanBadgeColor = (plan: string) => {
+    switch (plan) {
+      case 'admin':
+        return 'bg-red-100 text-red-700'
+      case 'pro':
+        return 'bg-purple-100 text-purple-700'
+      case 'free':
+        return 'bg-green-100 text-green-700'
+      case 'guest':
+        return 'bg-gray-100 text-gray-700'
+      default:
+        return 'bg-blue-100 text-blue-700'
+    }
+  }
 
   return (
     <div className="space-y-6 pb-10">
       {/* Header */}
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{user.name || 'Unknown User'}</h1>
-          <p className="text-gray-500 text-sm">User ID: {user.id}</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{user.name || 'Unknown User'}</h1>
+            <p className="text-gray-500 text-sm">User ID: {user.id}</p>
+          </div>
         </div>
+        <Button onClick={() => setEditDialogOpen(true)} variant="outline">
+          <Edit className="w-4 h-4 mr-2" />
+          Edit Profile
+        </Button>
       </div>
 
       {/* Top Section: Profile & Quick Stats */}
@@ -220,9 +241,7 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
               <span>Joined: {formatDate(user.created_at)}</span>
             </div>
             <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                user.plan === 'pro' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
-              }`}>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPlanBadgeColor(user.plan)}`}>
                 {user.plan.toUpperCase()}
               </span>
               <div className="flex items-center space-x-1 text-yellow-600">
@@ -367,6 +386,13 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
           </div>
         </CardContent>
       </Card>
+
+      <EditUserDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={loadUserData}
+        user={user}
+      />
     </div>
   )
 }

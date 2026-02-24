@@ -10,6 +10,7 @@ import toast from 'react-hot-toast'
 import { formatDate } from '@/lib/utils'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { logAction } from '@/lib/logger'
+import { EditUserDialog } from '@/components/users/edit-user-dialog'
 
 interface User {
   id: string
@@ -38,6 +39,9 @@ function UsersPageContent() {
   const [totalPages, setTotalPages] = useState(1)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const pageSize = 20
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
   // Get sort params from URL or default
   const sortColumn = searchParams.get('sort') || 'created_at'
@@ -175,6 +179,8 @@ function UsersPageContent() {
 
   const getPlanBadgeColor = (plan: string) => {
     switch (plan) {
+      case 'admin':
+        return 'bg-red-100 text-red-700'
       case 'pro':
         return 'bg-purple-100 text-purple-700'
       case 'free':
@@ -184,6 +190,11 @@ function UsersPageContent() {
       default:
         return 'bg-blue-100 text-blue-700'
     }
+  }
+
+  const handleEditClick = (user: User) => {
+    setSelectedUser(user)
+    setEditDialogOpen(true)
   }
 
   return (
@@ -278,7 +289,7 @@ function UsersPageContent() {
                       />
                     </th>
                     <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-100"
                       onClick={() => handleSort('name')}
                     >
                       <div className="flex items-center">
@@ -287,7 +298,7 @@ function UsersPageContent() {
                       </div>
                     </th>
                     <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-100"
                       onClick={() => handleSort('phone')}
                     >
                       <div className="flex items-center">
@@ -296,7 +307,7 @@ function UsersPageContent() {
                       </div>
                     </th>
                     <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-100"
                       onClick={() => handleSort('plan')}
                     >
                       <div className="flex items-center">
@@ -305,7 +316,7 @@ function UsersPageContent() {
                       </div>
                     </th>
                     <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-100"
                       onClick={() => handleSort('exam_type')}
                     >
                       <div className="flex items-center">
@@ -314,7 +325,7 @@ function UsersPageContent() {
                       </div>
                     </th>
                     <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-100"
                       onClick={() => handleSort('coins')}
                     >
                       <div className="flex items-center">
@@ -323,7 +334,7 @@ function UsersPageContent() {
                       </div>
                     </th>
                     <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-100"
                       onClick={() => handleSort('created_at')}
                     >
                       <div className="flex items-center">
@@ -396,6 +407,7 @@ function UsersPageContent() {
                             <Eye className="w-4 h-4" />
                           </Link>
                           <button
+                            onClick={() => handleEditClick(user)}
                             className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
                             title="Edit user"
                           >
@@ -443,6 +455,13 @@ function UsersPageContent() {
           </>
         )}
       </div>
+
+      <EditUserDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={loadUsers}
+        user={selectedUser}
+      />
     </div>
   )
 }
